@@ -37,22 +37,23 @@ full_data <- second_join_data[, c(1, 2, 6, 7, 3, 5, 9, 10, 4, 8, 11, 12, 13, 14)
 summary(full_data)
 
 
-
 #Quality of Live vs Cost of Living with their respective leaders
 qol_data <- filter(full_data, Quality.of.Life.Index > 142)
-ggplot(qol_data, aes(y = reorder(Country, Quality.of.Life.Index), 
+qol_plot <- ggplot(qol_data, aes(y = reorder(Country, Quality.of.Life.Index), 
                       x = Quality.of.Life.Index, size = Cost.of.Living.Index)) +
   geom_point(color = "black")
 
 col_data <- filter(full_data, Cost.of.Living.Index < 45)
-ggplot(col_data, aes(y = reorder(Country, -Cost.of.Living.Index), 
-                       x = Cost.of.Living.Index, size = Quality.of.Life.Index)) +
-  geom_point(color = "black")
+col_plot <- ggplot(col_data, aes(y = reorder(Country, -Cost.of.Living.Index), 
+                       x = Cost.of.Living.Index)) +
+  geom_point(color = "blue", 
+             fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
+  geom_segment(aes(x = 0, xend = Cost.of.Living.Index, y = Country, yend = Country))
 
 
 #Property Price to Income Graph
 ppi_data <- filter(full_data, Property.Price.to.Income.Ratio < 8)
-ggplot(ppi_data) +
+ppi_plot <- ggplot(ppi_data) +
   geom_col(aes(y = Property.Price.to.Income.Ratio, 
                x = reorder(Country, -Property.Price.to.Income.Ratio)),
            fill = "green") +
@@ -60,12 +61,6 @@ ggplot(ppi_data) +
 
 
 #Calculate a personal well-being rating off of col(6:9)
-colnames(full_data)
-summary(full_data$Health.Care.Index)
-summary(full_data$Pollution.Index)
-summary(full_data$Climate.Index)
-summary(full_data$Safety.Index)
-
 wellbeing_data <- full_data[,c(6:9)]
 country_data <- as.data.frame(full_data[,1])
 
@@ -88,9 +83,15 @@ colnames(binded_data) = c("Country", "Health", "Pollution", "Climate",
 equation_data <- mutate(binded_data, "wellbeing" = Health - Pollution + 
                           Climate + Safety) %>% filter(wellbeing > 1.09)
 
-#Graphs for wellbeing data
-ggplot(equation_data, aes(x = wellbeing, y = reorder(Country, wellbeing))) +
+#Graph for wellbeing data
+wellbeing_plot <- ggplot(equation_data, aes(x = wellbeing, y = reorder(Country, wellbeing))) +
   geom_point(color = "blue", size = 2, 
              fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
   geom_segment(aes(x = 0, xend = wellbeing, y = Country, yend = Country)) +
   labs(x = "Total Wellbeing", y = NULL) 
+
+qol_plot
+col_plot
+ppi_plot
+wellbeing_plot
+
