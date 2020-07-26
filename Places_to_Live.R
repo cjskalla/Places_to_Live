@@ -32,8 +32,10 @@ join_data <- inner_join(quality_of_life, population_density, by = "Country")
 second_join_data <- inner_join(join_data, age_structure, by = "Country")
 
 full_data <- second_join_data[, c(1, 2, 6, 7, 3, 5, 9, 10, 4, 8, 11, 12, 13, 14)]
+full_data <- filter(full_data, Quality.of.Life.Index > 135)
 
 country_data <- as.data.frame(full_data[,1])
+number_data <- as.data.frame(full_data[, c(2, 6, 7, 3, 5, 9, 4, 8)])
 
 #Scaling data to minmax to essentially make percentiles
 rescale.many <- function(dat, column.nos) { 
@@ -46,38 +48,42 @@ rescale.many <- function(dat, column.nos) {
   dat 
 } 
 
+scaled_number_data <- as.data.frame(rescale.many(number_data, c(1,2,3,4,5,6,7,8)))
+scaled_number_data <- as.data.frame(scaled_number_data[, c(9:16)])
+scaled_full_data <- cbind(country_data, scaled_number_data)
+scaled_full_data <- scaled_full_data[, c(1, 2, 5, 6, 8, 3, 7, 4, 9)]
+
+colnames(scaled_full_data) = c("Country", "Quality", "Cost", "Purchasing.Power", 
+                               "Property.Price.to.Income", "Health.Care", 
+
+                                                              "Safety", "Pollution", "Climate")
+scaled_full_data <- mutate(scaled_full_data, "Quality.Cost" = Quality/Cost, "WellBeing" = Health.Care - Pollution + 
+                          Climate + Safety) %>% select(-Health.Care, -Safety, -Pollution, 
+                                                       -Climate)
+
+scaled_full_data <- as.data.frame(rescale.many(scaled_full_data, c(6,7))) %>% select(-Quality.Cost, -WellBeing)
+
 #Gathering knowledge on the dataset
 summary(full_data$Quality.of.Life.Index)
 
 
 #Quality of Life Plot
-qol_data <- as.data.frame(full_data[,2])
-scaled_qol_data <- as.data.frame(rescale.many(qol_data, 1))
-qol_binded_data <- cbind(country_data, scaled_qol_data)
-graph_qol_data <- as.data.frame(qol_binded_data[, c(1,3)])
-colnames(graph_qol_data) = c("Country", "Quality")
-qol_plot <- ggplot(graph_qol_data[1:10,], aes(y = reorder(Country, Quality), 
-                      x = Quality)) +
+qol_data <- scaled_full_data %>% arrange(desc(Quality))
+qol_plot <- ggplot(qol_data[1:10,], aes(y = reorder(Country, Quality), 
+                                              x = Quality)) +
   geom_point(color = "black", size = 5) + labs(title = "Top 10 Qualities of Life", 
-                                     x = "Quality of Life Percentile", 
-                                     y = "Country")
-
-
+                                               x = "Quality of Life Percentile", 
+                                               y = "Country")
 qol_plot
 
 
 #Cost of Living Plot
-col_data <- as.data.frame(full_data[,3])
-scaled_col_data <- as.data.frame(rescale.many(col_data, 1))
-col_binded_data <- cbind(country_data, scaled_col_data)
-graph_col_data <- as.data.frame(col_binded_data[, c(1,3)])
-colnames(graph_col_data) = c("Country", "Cost")
-graph_col_data <- graph_col_data %>% arrange(desc(-Cost))
-col_plot <- ggplot(graph_col_data[1:10,], aes(y = reorder(Country, -Cost), 
-                       x = Cost)) +
+col_data <- scaled_full_data %>% arrange(desc(-Cost))
+col_plot <- ggplot(col_data[1:10,], aes(y = reorder(Country, -Cost), 
+                                              x = Cost)) +
   geom_point(color = "black", size = 5) + labs(title = "Top 10 Cheapest Costs of Living", 
-                                     x = "Cost of Living Percentile", 
-                                     y = "Country")
+                                               x = "Cost of Living Percentile", 
+                                               y = "Country")
 
 # to make lollipop chart => geom_segment(aes(x = 0, xend = Cost.of.Living.Index, y = Country, yend = Country))
 
@@ -116,11 +122,27 @@ ratio_plot <- ggplot(graph_ratio_data[1:10,], aes(y = reorder(Country, Ratio),
 ratio_plot
 
 
+#Ratio Plot 2.0
+ratio_2_data <- scaled_full_data %>% arrange(desc(Quality.Cost.rescaled))
+ratio_2_plot <- ggplot(ratio_2_data[1:10,], aes(y = reorder(Country, Quality.Cost.rescaled), 
+                                                  x = Quality.Cost.rescaled)) +
+  geom_point(color = "blue", size = 5,
+             fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
+  geom_segment(aes(x = 0, xend = Quality.Cost.rescaled, y = Country, yend = Country), color = "white") + 
+  labs(title = "Top 10 Quality over Cost", 
+       x = "Quality over Cost Percentile", y = "Country") + 
+  theme_solarized_2(light=FALSE) + scale_colour_solarized('blue') +
+  theme(axis.text.y = element_text(angle = 360))
+
+
+ratio_2_plot
+
+
 #Property Price to Income Graph
-ppi_data <- full_data %>% arrange(desc(-Property.Price.to.Income.Ratio))
+ppi_data <- scaled_full_data %>% arrange(desc(-Property.Price.to.Income))
 ppi_plot <- ggplot(ppi_data[1:10,]) +
-  geom_col(aes(y = Property.Price.to.Income.Ratio, 
-               x = reorder(Country, -Property.Price.to.Income.Ratio)),
+  geom_col(aes(y = Property.Price.to.Income, 
+               x = reorder(Country, -Property.Price.to.Income)),
            fill = "green") +
   labs(y = "Property Price to Income ", x = NULL) + coord_polar()
 
@@ -138,7 +160,7 @@ scaled_wellbeing_data <- scaled_wellbeing_data[, c(5:8)]
 binded_data <- cbind(country_data, scaled_wellbeing_data)
 colnames(binded_data) = c("Country", "Health", "Pollution", "Climate",
                           "Safety")
-equation_data <- mutate(binded_data, "wellbeing" = Health - Pollution + 
+equation_data <- mutate(scaled_full_data, "wellbeing" = Health.Care - Pollution + 
                           Climate + Safety)  %>% arrange(desc(wellbeing))
 
 #Graph for wellbeing data
