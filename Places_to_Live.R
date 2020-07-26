@@ -153,17 +153,17 @@ wellbeing_plot <- ggplot(equation_data[1:10,], aes(x = wellbeing, y = reorder(Co
   geom_point(color = "blue", size = 2, 
              fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
   geom_segment(aes(x = 0, xend = wellbeing, y = Country, yend = Country)) + 
-  labs(title = "Top 10 Wellbeing", 
-       x = "Total Wellbeing", y = "Country") + 
+  labs(title = "Top 10 Well-being", 
+       x = "Total Well-being", y = "Country") + 
   theme_wsj()+ scale_colour_wsj("colors6")
 
 wellbeing_plot <- ggplot(graph_wb_data[1:10,], aes(x = wellbeing, y = reorder(Country, wellbeing))) +
   geom_col(aes(y = wellbeing, 
                x = reorder(Country, wellbeing)), fill = "#800000", width = 0.5)  + 
   theme_wsj()+ scale_colour_wsj("colors6") + coord_flip() +
-  labs(title = "Top 10 Wellbeing", 
-       x = "Total Wellbeing", y = "Country", caption = 
-         "Wellbeing Percentile calculated by aggregating indexes of: Healthcare, Pollution, Climate, 
+  labs(title = "Top 10 Well-being", 
+       x = "Total Well-being", y = "Country", caption = 
+         "Well-being Percentile calculated by aggregating indexes of: Healthcare, Pollution, Climate, 
        and Safety")
 
 wellbeing_plot
