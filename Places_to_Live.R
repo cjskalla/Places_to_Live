@@ -8,6 +8,7 @@ library(plotly)
 library(GGally)
 library(scales)
 library(ggthemes)
+library(ggrepel)
 
 #Reading in all of the data
 cost_of_living <- read.csv("Data/Cost of living index by country 2020.csv") %>% 
@@ -55,13 +56,17 @@ scaled_full_data <- scaled_full_data[, c(1, 2, 5, 6, 8, 3, 7, 4, 9)]
 
 colnames(scaled_full_data) = c("Country", "Quality", "Cost", "Purchasing.Power", 
                                "Property.Price.to.Income", "Health.Care", 
+                               "Safety", "Pollution", "Climate")
+scaled_full_data <- mutate(scaled_full_data, "Quality.Cost" = Quality/Cost, 
+                           "WellBeing" = Health.Care - Pollution + Climate + 
+                             Safety) %>% select(-Health.Care, -Safety, -Pollution, 
+                                                -Climate)
 
-                                                              "Safety", "Pollution", "Climate")
-scaled_full_data <- mutate(scaled_full_data, "Quality.Cost" = Quality/Cost, "WellBeing" = Health.Care - Pollution + 
-                          Climate + Safety) %>% select(-Health.Care, -Safety, -Pollution, 
-                                                       -Climate)
+scaled_full_data <- as.data.frame(rescale.many(scaled_full_data, c(6,7))) %>% 
+  select(-Quality.Cost, -WellBeing)
 
-scaled_full_data <- as.data.frame(rescale.many(scaled_full_data, c(6,7))) %>% select(-Quality.Cost, -WellBeing)
+scaled_full_data[36, 6] = 1.0
+scaled_full_data[22, 6] = 0.95
 
 #Gathering knowledge on the dataset
 summary(full_data$Quality.of.Life.Index)
@@ -81,34 +86,18 @@ qol_plot
 col_data <- scaled_full_data %>% arrange(desc(-Cost))
 col_plot <- ggplot(col_data[1:10,], aes(y = reorder(Country, -Cost), 
                                               x = Cost)) +
-  geom_point(color = "black", size = 5) + labs(title = "Top 10 Cheapest Costs of Living", 
+  geom_point(color = "black", size = 5) + labs(title = 
+                                                 "Top 10 Cheapest Costs of Living", 
                                                x = "Cost of Living Percentile", 
                                                y = "Country")
 
-# to make lollipop chart => geom_segment(aes(x = 0, xend = Cost.of.Living.Index, y = Country, yend = Country))
+# to make lollipop chart => geom_segment(aes(x = 0, xend = Cost.of.Living.Index, 
+#y = Country, yend = Country))
 
 
 
 col_plot
 
-
-
-#Ratio Plot
-ratio_data <- scaled_full_data %>% arrange(desc(Quality.Cost.rescaled))
-ratio_plot <- ggplot(ratio_data[1:10,], aes(y = reorder(Country, Quality.Cost.rescaled), 
-                                                  x = Quality.Cost.rescaled)) +
-  geom_point(aes(y = reorder(Country, Quality.Cost.rescaled), 
-                                             x = Quality.Cost.rescaled, 
-                                             size = WellBeing.rescaled*10), 
-             color = "blue", fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
-  geom_segment(aes(x = 0, xend = Quality.Cost.rescaled, y = Country, yend = Country), color = "white") + 
-  labs(title = "Top 10 Quality over Cost", 
-       x = "Quality over Cost Percentile", y = "Country") + 
-  theme_solarized_2(light=FALSE) + scale_colour_solarized('blue') +
-  theme(axis.text.y = element_text(angle = 360))
-
-
-ratio_plot
 
 
 #Property Price to Income Graph
@@ -123,18 +112,64 @@ ppi_plot <- ggplot(ppi_data[1:10,]) +
 ppi_plot
 
 
+#Ratio Plot
+ratio_data <- scaled_full_data %>% arrange(desc(Quality.Cost.rescaled))
+ratio_plot <- ggplot(ratio_data[1:10,], aes(y = reorder(Country, 
+                                                        Quality.Cost.rescaled), 
+                                                  x = Quality.Cost.rescaled)) +
+  geom_point(aes(y = reorder(Country, Quality.Cost.rescaled), 
+                                             x = Quality.Cost.rescaled, 
+                                             size = WellBeing.rescaled*10), 
+             color = "blue", fill = alpha("lightblue", 0.5), shape = 21, stroke = 2)  +
+  geom_segment(aes(x = 0, xend = Quality.Cost.rescaled, y = Country, yend = Country), 
+               color = "white") + 
+  labs(title = "Top 10 Quality over Cost", 
+       x = "Quality over Cost Percentile", y = "Country") + 
+  theme_solarized_2(light=FALSE) + scale_colour_solarized('blue') +
+  theme(axis.text.y = element_text(angle = 360))
+
+
+ratio_plot
+
+
 
 
 #Graph for wellbeing data
 well_being_data <- scaled_full_data %>% arrange(desc(WellBeing.rescaled))
-wellbeing_plot <- ggplot(well_being_data[1:10,], aes(x = WellBeing.rescaled, y = reorder(Country, WellBeing.rescaled))) +
+wellbeing_plot <- ggplot(well_being_data[1:10,], aes(x = WellBeing.rescaled, 
+                                                     y = reorder(Country, 
+                                                                 WellBeing.rescaled))) +
   geom_col(aes(y = WellBeing.rescaled, 
-               x = reorder(Country, WellBeing.rescaled)), fill = "#800000", width = 0.5)  + 
+               x = reorder(Country, WellBeing.rescaled)), fill = "#800000", 
+           width = 0.5)  + 
   theme_wsj()+ scale_colour_wsj("colors6") + coord_flip() +
   labs(title = "Top 10 Well-being", 
        x = "Total Well-being", y = "Country", caption = 
-         "Well-being Percentile calculated by aggregating indexes of: Healthcare, Pollution, Climate, 
+         "Well-being Percentile calculated by aggregating indexes of: Healthcare, 
+         Pollution, Climate, 
        and Safety")
 
 wellbeing_plot
+
+
+#Scatterplot of Well-Being vs Quality over Cost
+mean(scaled_full_data$Quality.Cost.rescaled)
+colnames(scaled_full_data)
+wb_qoc_plot <- ggplot(scaled_full_data) +
+  geom_point(aes(x = Quality.Cost.rescaled, 
+                 y = WellBeing.rescaled, 
+                 size = 10*Property.Price.to.Income, 
+                 color = Purchasing.Power)) + 
+  geom_text_repel(data = subset(scaled_full_data, Quality.Cost.rescaled > 0.6 |
+                                         WellBeing.rescaled > 0.82), 
+                           aes(x = Quality.Cost.rescaled, 
+                               y = WellBeing.rescaled, label = Country)) + 
+  geom_hline(yintercept = mean(scaled_full_data$WellBeing.rescaled), 
+             linetype = "dashed") + 
+  geom_vline(xintercept = mean(scaled_full_data$Quality.Cost.rescaled),
+             linetype = "dashed") +
+  scale_color_gradient(low = "yellow", high = "red", na.value = NA) 
+  
+
+wb_qoc_plot
 
