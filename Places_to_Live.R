@@ -13,19 +13,19 @@ library(ggrepel)
 #Reading in all of the data
 cost_of_living <- read.csv("Data/Cost of living index by country 2020.csv") %>% 
   select(c(-Rent.Index, -Local.Purchasing.Power.Index))
-names(cost_of_living)[names(cost_of_living) == 'ï..Country'] <- 'Country'
+names(cost_of_living)[names(cost_of_living) == 'Ã¯..Country'] <- 'Country'
 
 age_structure <- read.csv("Data/Coutries age structure.csv") 
-names(age_structure)[names(age_structure) == 'ï..Country'] <- 'Country'
+names(age_structure)[names(age_structure) == 'Ã¯..Country'] <- 'Country'
 
 population_density <- read.csv("Data/Pupulation density by countries.csv") %>% 
-  select(c(-ï..Rank, -Area.km2, -Area.km2, -Area.mi2, -Population, 
+  select(c(-Ã¯..Rank, -Area.km2, -Area.km2, -Area.mi2, -Population, 
            -Density.pop..km2, -Date, -Population.source))
 names(population_density)[names(population_density) == 
                             'Country..or.dependent.territory.'] <- 'Country'
 
 quality_of_life <- read.csv("Data/Quality of life index by countries 2020.csv")
-names(quality_of_life)[names(quality_of_life) == 'ï..Country'] <- 'Country'
+names(quality_of_life)[names(quality_of_life) == 'Ã¯..Country'] <- 'Country'
 
 
 #Joining datasets to gather all the necessary columns
